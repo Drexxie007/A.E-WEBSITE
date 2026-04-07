@@ -1,5 +1,5 @@
-
 import { prisma } from "../../config/prisma-client";
+import { UserRole, UserStatus } from "../../shared/constants/auth";
 
 export interface CreateUserInput {
   name: string;
@@ -7,19 +7,10 @@ export interface CreateUserInput {
 }
 
 export const usersService = {
-  getAllUsers: async () => {
-    return prisma.user.findMany({
-      orderBy: {
-        createdAt: "desc"
-      }
-    });
-  },
+  listUsers: async () => "This is usersService.listUsers endpoint.",
 
-  createUser: async (input: CreateUserInput) => {
-    return prisma.user.create({
-      data: input
-    });
-  },
+  getUserById: async (_input: { userId: string }) =>
+    "This is usersService.getUserById endpoint.",
 
   isDuplicateEmailError: (error: unknown) => {
     return (
@@ -28,5 +19,11 @@ export const usersService = {
       "code" in error &&
       error.code === "P2002"
     );
-  }
+  },
+
+  updateUserAccess: async (_input: {
+    userId: string;
+    role?: UserRole;
+    status?: UserStatus;
+  }) => "This is usersService.updateUserAccess endpoint."
 };
