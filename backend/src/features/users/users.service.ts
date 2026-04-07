@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 
 import { prisma } from "../../config/prisma-client";
 
@@ -24,7 +23,9 @@ export const usersService = {
 
   isDuplicateEmailError: (error: unknown) => {
     return (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
       error.code === "P2002"
     );
   }
