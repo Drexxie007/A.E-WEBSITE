@@ -1,10 +1,10 @@
-import HomePage from "./pages/HomePage"
+import LearningCohort from "./pages/LearningCohort"
 
 function App() {
 
   return (
     <>
-      <HomePage/>
+      <LearningCohort/>
     </>
   )
 }
