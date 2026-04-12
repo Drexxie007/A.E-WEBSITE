@@ -189,6 +189,7 @@ async function createAuthenticationResult(
     id: string;
     firstName: string;
     lastName: string;
+    username: string;
     email: string;
     role: User["role"];
     status: User["status"];
@@ -230,6 +231,15 @@ export const authService = {
     const existingUser = await prisma.user.findUnique({
       where: {
         email: input.email
+      },
+      select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      username: true, 
+      email: true,
+      role: true,
+      status: true
       }
     });
 
@@ -249,6 +259,19 @@ export const authService = {
       };
     }
 
+    //username intigration
+        const existingUsername = await prisma.user.findUnique({
+       where: {
+        username: input.username
+      }
+    });
+    
+    if (existingUsername) {
+      throw new AppError(409, "Username already taken.", "USERNAME_IN_USE");
+    }
+
+
+
     const passwordHash = await hashPassword(input.password);
 
     const user = await prisma.user.create({
@@ -257,6 +280,7 @@ export const authService = {
         lastName: input.lastName,
         username: input.username,
         email: input.email,
+        username: input.username,
         passwordHash,
         role: "STUDENT",
         status: "ACTIVE",
@@ -570,7 +594,7 @@ export const authService = {
     userId: string;
     currentPassword: string;
     newPassword: string;
-  }): Promise<void> => {
+   }): Promise<void> => {
     if (input.currentPassword === input.newPassword) {
       throw new AppError(
         400,
