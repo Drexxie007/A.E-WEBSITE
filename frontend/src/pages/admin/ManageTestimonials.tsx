@@ -1,5 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../../lib/api";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  MessageSquare, 
+  Trash2, 
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  Check,
+  X,
+  Star,
+  Quote,
+  Clock,
+  ThumbsUp,
+  ThumbsDown,
+  ShieldAlert
+} from "lucide-react";
 
 type TestimonialStatus = "APPROVED" | "REJECTED" | "PENDING";
 
@@ -27,7 +43,7 @@ interface AdminTestimonial {
   approvedBy?: AdminUserSummary | null;
 }
 
-const STATUS_OPTIONS: ReadonlyArray<TestimonialStatus> = ["PENDING", "APPROVED", "REJECTED"];
+
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -102,13 +118,27 @@ const getErrorMessage = (error: unknown): string => {
 
 const getStatusStyle = (status: TestimonialStatus): string => {
   if (status === "APPROVED") {
-    return "bg-emerald-500/15 text-emerald-300 border border-emerald-400/30";
+    return "bg-emerald-500/15 text-emerald-400 border border-emerald-400/30";
   }
   if (status === "REJECTED") {
-    return "bg-rose-500/15 text-rose-300 border border-rose-400/30";
+    return "bg-rose-500/15 text-rose-400 border border-rose-400/30";
   }
-  return "bg-amber-500/15 text-amber-200 border border-amber-400/30";
+  return "bg-amber-500/15 text-amber-400 border border-amber-400/30";
 };
+
+// Animations
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+} as const;
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100, damping: 15 } }
+} as const;
 
 export default function ManageTestimonials() {
   const [testimonials, setTestimonials] = useState<AdminTestimonial[]>([]);
@@ -145,6 +175,13 @@ export default function ManageTestimonials() {
   useEffect(() => {
     void loadTestimonials();
   }, [loadTestimonials]);
+
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
 
   const withLoading = async (testimonialId: string, fn: () => Promise<void>) => {
     setUpdatingIds((prev) => ({ ...prev, [testimonialId]: true }));
@@ -196,145 +233,244 @@ export default function ManageTestimonials() {
   };
 
   return (
-    <div className="pt-24 px-6 min-h-screen bg-[#050020] text-white">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-          <h1 className="text-3xl font-bold text-purple-300 mb-2">Manage Testimonials</h1>
-          <p className="text-gray-300">Review user submissions and control what is publicly visible.</p>
-        </section>
+    <div className="pt-24 px-6 min-h-screen bg-[#050020] text-white overflow-hidden relative">
+      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
 
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <p className="text-xs uppercase text-gray-400">Pending</p>
-            <p className="text-2xl font-semibold">{stats.pending}</p>
+      <motion.div 
+        className="max-w-7xl mx-auto relative z-10 pb-20 space-y-8"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.section variants={itemVariants} className="flex items-center gap-4 mb-4">
+          <div className="p-3 bg-blue-500/20 rounded-xl shadow-[0_0_30px_rgba(59,130,246,0.3)] border border-blue-500/30">
+            <MessageSquare className="w-8 h-8 text-blue-400" />
           </div>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <p className="text-xs uppercase text-gray-400">Approved</p>
-            <p className="text-2xl font-semibold">{stats.approved}</p>
-          </div>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <p className="text-xs uppercase text-gray-400">Rejected</p>
-            <p className="text-2xl font-semibold">{stats.rejected}</p>
-          </div>
-        </section>
-
-        <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-          {actionError ? (
-            <p className="text-sm text-rose-200 bg-rose-500/10 border border-rose-400/30 rounded-lg p-3 mb-3">
-              {actionError}
+          <div>
+            <h1 className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+              Manage Testimonials
+            </h1>
+            <p className="text-gray-400 text-sm md:text-base mt-2">
+              Review user feedback, moderate submissions, and highlight the best stories.
             </p>
-          ) : null}
-          {successMessage ? (
-            <p className="text-sm text-emerald-200 bg-emerald-500/10 border border-emerald-400/30 rounded-lg p-3 mb-3">
-              {successMessage}
-            </p>
-          ) : null}
+          </div>
+        </motion.section>
 
-          {isLoading ? <p className="text-gray-300">Loading testimonials...</p> : null}
+        <motion.section variants={containerVariants} className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <motion.div variants={itemVariants} className="bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-amber-500/30 transition-colors rounded-3xl p-6 shadow-xl flex items-center gap-4">
+             <div className="p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20">
+                <Clock className="w-8 h-8 text-amber-400" />
+             </div>
+             <div>
+                <p className="text-xs uppercase font-medium tracking-wide text-gray-400">Needs Review</p>
+                <p className="text-3xl font-bold text-white mt-1">{stats.pending}</p>
+             </div>
+          </motion.div>
+          
+          <motion.div variants={itemVariants} className="bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-emerald-500/30 transition-colors rounded-3xl p-6 shadow-xl flex items-center gap-4">
+             <div className="p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+                <ThumbsUp className="w-8 h-8 text-emerald-400" />
+             </div>
+             <div>
+                <p className="text-xs uppercase font-medium tracking-wide text-gray-400">Approved</p>
+                <p className="text-3xl font-bold text-white mt-1">{stats.approved}</p>
+             </div>
+          </motion.div>
+          
+          <motion.div variants={itemVariants} className="bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-rose-500/30 transition-colors rounded-3xl p-6 shadow-xl flex items-center gap-4">
+             <div className="p-4 bg-rose-500/10 rounded-2xl border border-rose-500/20">
+                <ThumbsDown className="w-8 h-8 text-rose-400" />
+             </div>
+             <div>
+                <p className="text-xs uppercase font-medium tracking-wide text-gray-400">Rejected</p>
+                <p className="text-3xl font-bold text-white mt-1">{stats.rejected}</p>
+             </div>
+          </motion.div>
+        </motion.section>
+
+        <motion.section variants={itemVariants} className="bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] shadow-2xl rounded-3xl p-6 md:p-8 relative">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <Quote className="w-6 h-6 text-indigo-400" />
+              Submission Queue
+            </h2>
+            <span className="bg-white/10 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider">
+               {testimonials.length} Total
+            </span>
+          </div>
+
+          <AnimatePresence>
+            {actionError && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                exit={{ opacity: 0, y: -10 }}
+                className="flex items-center gap-3 bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 mb-6 shadow-lg shadow-rose-500/5"
+              >
+                <AlertCircle className="w-5 h-5 text-rose-400" />
+                <p className="text-sm font-medium text-rose-200">{actionError}</p>
+              </motion.div>
+            )}
+            {successMessage && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                exit={{ opacity: 0, y: -10 }}
+                className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6 shadow-lg shadow-emerald-500/5"
+              >
+                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                <p className="text-sm font-medium text-emerald-200">{successMessage}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {isLoading ? (
+             <div className="flex flex-col items-center justify-center py-12">
+                <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
+                <p className="text-indigo-200">Loading submissions...</p>
+             </div>
+          ) : null}
+          
           {!isLoading && error ? (
-            <div className="space-y-3">
-              <p className="text-rose-200">{error}</p>
+            <div className="flex flex-col items-center py-12 text-center">
+              <AlertCircle className="w-12 h-12 text-rose-400 mb-4" />
+              <p className="text-rose-200 mb-4">{error}</p>
               <button
                 type="button"
                 onClick={() => void loadTestimonials()}
-                className="px-4 py-2 bg-rose-500 hover:bg-rose-400 rounded-lg font-medium"
+                className="px-6 py-2.5 bg-rose-500 hover:bg-rose-400 rounded-xl font-medium shadow-lg shadow-rose-500/20"
               >
-                Retry
+                Retry Request
               </button>
             </div>
           ) : null}
+          
           {!isLoading && !error && testimonials.length === 0 ? (
-            <p className="text-gray-300">No testimonials found.</p>
+            <div className="text-center py-12">
+               <ShieldAlert className="w-12 h-12 mx-auto text-gray-500 mb-4 opacity-50" />
+               <p className="text-gray-400">No testimonials submitted yet.</p>
+            </div>
           ) : null}
 
           {!isLoading && !error && testimonials.length > 0 ? (
-            <div className="space-y-3">
-              {testimonials.map((testimonial) => {
-                const isBusy = Boolean(updatingIds[testimonial.id]);
-                return (
-                  <article
-                    key={testimonial.id}
-                    className="rounded-xl border border-white/15 bg-white/5 p-4 space-y-3"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <h3 className="text-lg font-medium">{testimonial.name}</h3>
-                          <span className={`text-xs px-2.5 py-1 rounded-full ${getStatusStyle(testimonial.status)}`}>
-                            {testimonial.status}
-                          </span>
-                          {testimonial.isFeatured ? (
-                            <span className="text-xs px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-200 border border-purple-400/30">
-                              Featured
+            <div className="space-y-6">
+              <AnimatePresence>
+                {testimonials.map((testimonial) => {
+                  const isBusy = Boolean(updatingIds[testimonial.id]);
+                  return (
+                    <motion.article
+                      layout
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.98 }}
+                      key={testimonial.id}
+                      className={`group bg-white/[0.02] border border-white/[0.08] hover:border-indigo-500/30 rounded-2xl p-6 transition-all duration-300 relative overflow-hidden flex flex-col gap-4 ${isBusy ? 'opacity-50 pointer-events-none' : ''}`}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 via-transparent to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                      
+                      {isBusy && (
+                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-20">
+                            <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+                         </div>
+                      )}
+
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 z-10">
+                        <div className="flex-1">
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <h3 className="text-xl font-bold text-white group-hover:text-indigo-300 transition-colors">{testimonial.name}</h3>
+                            <span className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-md ${getStatusStyle(testimonial.status)}`}>
+                              {testimonial.status}
                             </span>
-                          ) : null}
-                        </div>
-                        <p className="text-sm text-gray-300">
-                          {testimonial.title || "No title"}
-                          {testimonial.company ? ` • ${testimonial.company}` : ""}
-                        </p>
-                        <p className="text-sm text-gray-400">
-                          Submitted: {new Date(testimonial.createdAt).toLocaleString()}
-                        </p>
-                        {typeof testimonial.rating === "number" ? (
-                          <p className="text-sm text-amber-200">Rating: {testimonial.rating}/5</p>
-                        ) : null}
-                        {testimonial.user ? (
-                          <p className="text-sm text-gray-400">
-                            User: {testimonial.user.username} ({testimonial.user.email})
+                            {testimonial.isFeatured ? (
+                              <span className="text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-md bg-purple-500/20 text-purple-300 border border-purple-400/30 flex items-center gap-1">
+                                <Star className="w-3 h-3 fill-purple-400 text-purple-400" /> Featured
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="text-sm text-gray-400 mb-1">
+                            {testimonial.title || "No Title"}
+                            {testimonial.company ? ` @ ${testimonial.company}` : ""}
                           </p>
+                          <div className="flex items-center gap-4 text-xs font-medium text-gray-500">
+                             <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(testimonial.createdAt).toLocaleDateString()}</span>
+                             {testimonial.user && (
+                                <span className="bg-white/5 px-2 py-1 rounded-md text-gray-400">Account: @{testimonial.user.username}</span>
+                             )}
+                          </div>
+                        </div>
+
+                        {typeof testimonial.rating === "number" ? (
+                           <div className="flex gap-1 items-center shrink-0 p-3 bg-amber-500/10 rounded-xl border border-amber-500/20">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`w-4 h-4 ${star <= (testimonial.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-gray-600'}`}
+                                />
+                              ))}
+                           </div>
                         ) : null}
                       </div>
 
-                      <div className="flex flex-wrap gap-2">
-                        {STATUS_OPTIONS.map((statusOption) => (
-                          <button
-                            key={statusOption}
-                            type="button"
-                            disabled={isBusy || statusOption === testimonial.status}
-                            onClick={() =>
-                              void updateStatus(
-                                testimonial,
-                                statusOption,
-                                statusOption === "APPROVED" ? testimonial.isFeatured : false
-                              )
-                            }
-                            className="px-3 py-2 rounded-lg bg-cyan-600/80 hover:bg-cyan-500 disabled:bg-cyan-900/40 disabled:cursor-not-allowed text-sm font-medium"
-                          >
-                            Mark {statusOption}
-                          </button>
-                        ))}
+                      <div className="relative p-6 bg-black/20 rounded-xl border border-white/5 mt-2 z-10 italic text-gray-300 leading-relaxed font-serif">
+                         <Quote className="w-8 h-8 text-indigo-500/20 absolute top-2 left-2 rotate-180" />
+                         <p className="relative z-10 pt-2 pl-4 text-lg">"{testimonial.content}"</p>
+                      </div>
 
-                        <button
-                          type="button"
-                          disabled={isBusy}
-                          onClick={() =>
-                            void updateStatus(testimonial, testimonial.status, !testimonial.isFeatured)
-                          }
-                          className="px-3 py-2 rounded-lg bg-purple-600/80 hover:bg-purple-500 disabled:bg-purple-900/40 disabled:cursor-not-allowed text-sm font-medium"
-                        >
-                          {testimonial.isFeatured ? "Unfeature" : "Feature"}
-                        </button>
+                      <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-white/10 z-10">
+                        {testimonial.status !== "APPROVED" && (
+                           <button
+                             type="button"
+                             disabled={isBusy}
+                             onClick={() => void updateStatus(testimonial, "APPROVED", false)}
+                             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all font-medium text-sm group/btn border border-emerald-500/20"
+                           >
+                             <Check className="w-4 h-4 group-hover/btn:scale-110 transition-transform" /> Approve
+                           </button>
+                        )}
+                        
+                        {testimonial.status !== "REJECTED" && (
+                           <button
+                             type="button"
+                             disabled={isBusy}
+                             onClick={() => void updateStatus(testimonial, "REJECTED", false)}
+                             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white transition-all font-medium text-sm group/btn border border-rose-500/20"
+                           >
+                             <X className="w-4 h-4 group-hover/btn:scale-110 transition-transform" /> Reject
+                           </button>
+                        )}
+
+                        {testimonial.status === "APPROVED" && (
+                           <button
+                             type="button"
+                             disabled={isBusy}
+                             onClick={() => void updateStatus(testimonial, testimonial.status, !testimonial.isFeatured)}
+                             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500/10 text-purple-400 hover:bg-purple-500 hover:text-white transition-all font-medium text-sm group/btn border border-purple-500/20"
+                           >
+                             <Star className={`w-4 h-4 group-hover/btn:scale-110 transition-transform ${testimonial.isFeatured ? 'fill-current' : ''}`} /> 
+                             {testimonial.isFeatured ? "Remove Featured" : "Make Featured"}
+                           </button>
+                        )}
+
+                        <div className="flex-1" />
 
                         <button
                           type="button"
                           disabled={isBusy}
                           onClick={() => void deleteTestimonial(testimonial)}
-                          className="px-3 py-2 rounded-lg bg-rose-600/80 hover:bg-rose-500 disabled:bg-rose-900/40 disabled:cursor-not-allowed text-sm font-medium"
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all font-medium text-sm group/btn border border-red-500/20"
                         >
-                          Delete
+                          <Trash2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" /> Delete
                         </button>
                       </div>
-                    </div>
-
-                    <p className="text-gray-100 whitespace-pre-line">{testimonial.content}</p>
-                  </article>
-                );
-              })}
+                    </motion.article>
+                  );
+                })}
+              </AnimatePresence>
             </div>
           ) : null}
-        </section>
-      </div>
+        </motion.section>
+      </motion.div>
     </div>
   );
 }

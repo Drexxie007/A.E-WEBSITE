@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../lib/api";
+import { VideoEmbed } from "../components/VideoEmbed";
 
 type ResourceType = "VIDEO" | "LINK" | "DOCUMENT" | "NOTE";
 
@@ -8,8 +9,8 @@ interface ModuleResource {
   id: string;
   title: string;
   type: ResourceType;
-  url?: string;
-  content?: string;
+  url?: string | null;
+  content?: string | null;
 }
 
 interface ModuleQuizMeta {
@@ -22,9 +23,9 @@ interface ModuleDetailData {
   id: string;
   title: string;
   description: string;
-  shortDescription?: string;
+  shortDescription?: string | null;
   resources: ModuleResource[];
-  quiz?: ModuleQuizMeta;
+  quiz?: ModuleQuizMeta | null;
 }
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -34,7 +35,13 @@ const isResourceType = (value: unknown): value is ResourceType =>
   value === "VIDEO" || value === "LINK" || value === "DOCUMENT" || value === "NOTE";
 
 const isModuleDetailData = (value: unknown): value is ModuleDetailData => {
-  if (!isObject(value) || !Array.isArray(value.resources)) {
+  console.log("Validating module detail data:", value);
+  if (!isObject(value)) {
+    console.error("isModuleDetailData: value is not an object");
+    return false;
+  }
+  if (!Array.isArray(value.resources)) {
+    console.error("isModuleDetailData: value.resources is not an array");
     return false;
   }
 
@@ -44,15 +51,26 @@ const isModuleDetailData = (value: unknown): value is ModuleDetailData => {
     typeof value.description === "string";
 
   if (!baseValid) {
+    console.error("isModuleDetailData: base fields (id, title, description) invalid", {
+      id: typeof value.id,
+      title: typeof value.title,
+      description: typeof value.description
+    });
     return false;
   }
 
-  if (value.shortDescription !== undefined && typeof value.shortDescription !== "string") {
+  if (
+    value.shortDescription !== undefined &&
+    value.shortDescription !== null &&
+    typeof value.shortDescription !== "string"
+  ) {
+    console.error("isModuleDetailData: shortDescription invalid", typeof value.shortDescription);
     return false;
   }
 
-  const resourcesValid = value.resources.every((resource) => {
+  const resourcesValid = value.resources.every((resource, index) => {
     if (!isObject(resource)) {
+      console.error(`isModuleDetailData: resource[${index}] is not an object`);
       return false;
     }
 
@@ -62,14 +80,30 @@ const isModuleDetailData = (value: unknown): value is ModuleDetailData => {
       isResourceType(resource.type);
 
     if (!shapeValid) {
+      console.error(`isModuleDetailData: resource[${index}] shape invalid`, {
+        id: typeof resource.id,
+        title: typeof resource.title,
+        type: resource.type,
+        isResourceType: isResourceType(resource.type)
+      });
       return false;
     }
 
-    if (resource.url !== undefined && typeof resource.url !== "string") {
+    if (
+      resource.url !== undefined &&
+      resource.url !== null &&
+      typeof resource.url !== "string"
+    ) {
+      console.error(`isModuleDetailData: resource[${index}].url invalid`, typeof resource.url);
       return false;
     }
 
-    if (resource.content !== undefined && typeof resource.content !== "string") {
+    if (
+      resource.content !== undefined &&
+      resource.content !== null &&
+      typeof resource.content !== "string"
+    ) {
+      console.error(`isModuleDetailData: resource[${index}].content invalid`, typeof resource.content);
       return false;
     }
 
@@ -80,19 +114,29 @@ const isModuleDetailData = (value: unknown): value is ModuleDetailData => {
     return false;
   }
 
-  if (value.quiz === undefined) {
+  if (value.quiz === undefined || value.quiz === null) {
     return true;
   }
 
   if (!isObject(value.quiz)) {
+    console.error("isModuleDetailData: quiz is not an object", typeof value.quiz);
     return false;
   }
 
-  return (
+  const quizValid =
     typeof value.quiz.id === "string" &&
     typeof value.quiz.title === "string" &&
-    typeof value.quiz.isPublished === "boolean"
-  );
+    typeof value.quiz.isPublished === "boolean";
+  
+  if (!quizValid) {
+    console.error("isModuleDetailData: quiz fields invalid", {
+      id: typeof value.quiz.id,
+      title: typeof value.quiz.title,
+      isPublished: typeof value.quiz.isPublished
+    });
+  }
+
+  return quizValid;
 };
 
 const getResourceBadgeStyle = (type: ResourceType): string => {
@@ -219,14 +263,18 @@ export default function ModuleDetailPage() {
                       </div>
 
                       {resource.url ? (
-                        <a
-                          href={resource.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-cyan-300 underline break-all"
-                        >
-                          {resource.url}
-                        </a>
+                        resource.type === "VIDEO" ? (
+                          <VideoEmbed url={resource.url} />
+                        ) : (
+                          <a
+                            href={resource.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-cyan-300 underline break-all"
+                          >
+                            {resource.url}
+                          </a>
+                        )
                       ) : null}
 
                       {resource.content ? (

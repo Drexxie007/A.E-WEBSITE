@@ -1,5 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../../lib/api";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Users, 
+  Trash2, 
+  Edit3, 
+  Save, 
+  X,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  Image as ImageIcon,
+  Eye,
+  EyeOff,
+  UserPlus
+} from "lucide-react";
+import { FaLinkedin, FaTwitter } from "react-icons/fa";
 
 interface TeamMember {
   id: string;
@@ -87,6 +103,20 @@ const isValidUrl = (value: string): boolean => {
   }
 };
 
+// Animations
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+} as const;
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100, damping: 15 } }
+} as const;
+
 export default function ManageTeam() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [form, setForm] = useState<TeamFormState>(emptyForm());
@@ -119,6 +149,13 @@ export default function ManageTeam() {
   useEffect(() => {
     void loadMembers();
   }, [loadMembers]);
+
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
 
   const handleField = (field: keyof TeamFormState, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -209,6 +246,7 @@ export default function ManageTeam() {
     setForm(toFormState(member));
     setSubmitError(null);
     setSuccessMessage(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDelete = async (member: TeamMember) => {
@@ -232,20 +270,65 @@ export default function ManageTeam() {
   };
 
   return (
-    <div className="pt-24 px-6 min-h-screen bg-[#050020] text-white">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-          <h1 className="text-3xl font-bold text-purple-300 mb-2">Manage Team</h1>
-          <p className="text-gray-300">Add, update, and reorder team members shown publicly.</p>
-        </section>
+    <div className="pt-24 px-6 min-h-screen bg-[#050020] text-white overflow-hidden relative">
+      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
 
-        <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-          <h2 className="text-xl font-semibold mb-4">{isEditing ? "Edit Team Member" : "Add Team Member"}</h2>
+      <motion.div 
+        className="max-w-7xl mx-auto relative z-10 pb-20 space-y-8"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.section variants={itemVariants} className="flex items-center gap-4 mb-4">
+          <div className="p-3 bg-blue-500/20 rounded-xl shadow-[0_0_30px_rgba(59,130,246,0.3)] border border-blue-500/30">
+            <Users className="w-8 h-8 text-blue-400" />
+          </div>
+          <div>
+            <h1 className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+              Manage Team
+            </h1>
+            <p className="text-gray-400 text-sm md:text-base mt-2">
+              Curate the public profiles of the core individuals driving our mission.
+            </p>
+          </div>
+        </motion.section>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <motion.section variants={itemVariants} className="bg-white/[0.04] backdrop-blur-xl border border-white/[0.08] shadow-2xl rounded-3xl p-6 md:p-8 relative">
+          <AnimatePresence>
+            {submitError && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                exit={{ opacity: 0, y: -10 }}
+                className="flex items-center gap-3 bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 mb-6 shadow-lg shadow-rose-500/5"
+              >
+                <AlertCircle className="w-5 h-5 text-rose-400" />
+                <p className="text-sm font-medium text-rose-200">{submitError}</p>
+              </motion.div>
+            )}
+            {successMessage && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                exit={{ opacity: 0, y: -10 }}
+                className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6 shadow-lg shadow-emerald-500/5"
+              >
+                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                <p className="text-sm font-medium text-emerald-200">{successMessage}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+            {isEditing ? <Edit3 className="w-5 h-5 text-blue-400" /> : <UserPlus className="w-5 h-5 text-emerald-400" />}
+            {isEditing ? `Edit ${form.fullName}` : "Add New Team Member"}
+          </h2>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm text-gray-300 mb-1" htmlFor="team-full-name">
+                <label className="block text-xs uppercase tracking-wider font-bold text-gray-500 mb-2" htmlFor="team-full-name">
                   Full Name
                 </label>
                 <input
@@ -253,11 +336,12 @@ export default function ManageTeam() {
                   type="text"
                   value={form.fullName}
                   onChange={(event) => handleField("fullName", event.target.value)}
-                  className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2"
+                  className="w-full rounded-xl bg-white/5 border border-white/10 focus:border-blue-500/50 focus:bg-white/10 outline-none px-4 py-3 transition-colors placeholder:text-gray-600"
+                  placeholder="e.g. Jane Doe"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-300 mb-1" htmlFor="team-role-title">
+                <label className="block text-xs uppercase tracking-wider font-bold text-gray-500 mb-2" htmlFor="team-role-title">
                   Role Title
                 </label>
                 <input
@@ -265,66 +349,71 @@ export default function ManageTeam() {
                   type="text"
                   value={form.roleTitle}
                   onChange={(event) => handleField("roleTitle", event.target.value)}
-                  className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2"
+                  className="w-full rounded-xl bg-white/5 border border-white/10 focus:border-blue-500/50 focus:bg-white/10 outline-none px-4 py-3 transition-colors placeholder:text-gray-600"
+                  placeholder="e.g. Lead Instructor"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm text-gray-300 mb-1" htmlFor="team-bio">
-                Bio
+              <label className="block text-xs uppercase tracking-wider font-bold text-gray-500 mb-2" htmlFor="team-bio">
+                Biography
               </label>
               <textarea
                 id="team-bio"
                 rows={4}
                 value={form.bio}
                 onChange={(event) => handleField("bio", event.target.value)}
-                className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2"
+                className="w-full rounded-xl bg-white/5 border border-white/10 focus:border-blue-500/50 focus:bg-white/10 outline-none px-4 py-3 transition-colors placeholder:text-gray-600 resize-none"
+                placeholder="Brief professional background..."
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-sm text-gray-300 mb-1" htmlFor="team-image-url">
-                  Image URL
+                <label className="block text-xs uppercase tracking-wider font-bold text-gray-500 mb-2 flex items-center gap-2" htmlFor="team-image-url">
+                  <ImageIcon className="w-4 h-4 text-gray-400" /> Image URL
                 </label>
                 <input
                   id="team-image-url"
                   type="url"
                   value={form.imageUrl}
                   onChange={(event) => handleField("imageUrl", event.target.value)}
-                  className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2"
+                  className="w-full rounded-xl bg-white/5 border border-white/10 focus:border-blue-500/50 focus:bg-white/10 outline-none px-4 py-3 transition-colors placeholder:text-gray-600"
+                  placeholder="https://..."
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-300 mb-1" htmlFor="team-linkedin">
-                  LinkedIn URL
+                <label className="block text-xs uppercase tracking-wider font-bold text-gray-500 mb-2 flex items-center gap-2" htmlFor="team-linkedin">
+                  <FaLinkedin className="w-4 h-4 text-gray-400" /> LinkedIn
                 </label>
                 <input
                   id="team-linkedin"
                   type="url"
                   value={form.linkedinUrl}
                   onChange={(event) => handleField("linkedinUrl", event.target.value)}
-                  className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2"
+                  className="w-full rounded-xl bg-white/5 border border-white/10 focus:border-blue-500/50 focus:bg-white/10 outline-none px-4 py-3 transition-colors placeholder:text-gray-600"
+                  placeholder="https://..."
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-300 mb-1" htmlFor="team-twitter">
-                  Twitter URL
+                <label className="block text-xs uppercase tracking-wider font-bold text-gray-500 mb-2 flex items-center gap-2" htmlFor="team-twitter">
+                  <FaTwitter className="w-4 h-4 text-gray-400" /> Twitter / X
                 </label>
                 <input
                   id="team-twitter"
                   type="url"
                   value={form.twitterUrl}
                   onChange={(event) => handleField("twitterUrl", event.target.value)}
-                  className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2"
+                  className="w-full rounded-xl bg-white/5 border border-white/10 focus:border-blue-500/50 focus:bg-white/10 outline-none px-4 py-3 transition-colors placeholder:text-gray-600"
+                  placeholder="https://..."
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-sm text-gray-300 mb-1" htmlFor="team-sort-order">
+                <label className="block text-xs uppercase tracking-wider font-bold text-gray-500 mb-2" htmlFor="team-sort-order">
                   Sort Order
                 </label>
                 <input
@@ -332,109 +421,168 @@ export default function ManageTeam() {
                   type="number"
                   value={form.sortOrder}
                   onChange={(event) => handleField("sortOrder", event.target.value)}
-                  className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2"
+                  className="w-full rounded-xl bg-white/5 border border-white/10 focus:border-blue-500/50 focus:bg-white/10 outline-none px-4 py-3 transition-colors placeholder:text-gray-600"
+                  placeholder="0"
                 />
               </div>
-              <div className="flex items-end pb-2">
-                <label className="inline-flex items-center gap-2 text-sm text-gray-200">
+              <div className="flex items-center pt-6">
+                 <label className="relative inline-flex items-center cursor-pointer group">
                   <input
                     type="checkbox"
                     checked={form.isVisible}
                     onChange={(event) => handleField("isVisible", event.target.checked)}
-                    className="accent-purple-500"
+                    className="sr-only peer"
                   />
-                  Visible on public page
+                  <div className="w-11 h-6 bg-white/10 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                  <span className="ml-3 text-sm font-medium text-gray-300 group-hover:text-white transition-colors">Visible on platform</span>
                 </label>
               </div>
             </div>
 
-            {submitError ? (
-              <p className="text-sm text-rose-200 bg-rose-500/10 border border-rose-400/30 rounded-lg p-3">
-                {submitError}
-              </p>
-            ) : null}
-            {successMessage ? (
-              <p className="text-sm text-emerald-200 bg-emerald-500/10 border border-emerald-400/30 rounded-lg p-3">
-                {successMessage}
-              </p>
-            ) : null}
-
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-4 pt-4 border-t border-white/10">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 disabled:bg-purple-900/50 disabled:cursor-not-allowed font-medium"
+                className="flex items-center gap-2 px-8 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] disabled:opacity-50 disabled:hover:bg-blue-600 disabled:hover:shadow-none transition-all font-bold text-white"
               >
-                {isSubmitting ? "Saving..." : isEditing ? "Update Member" : "Create Member"}
+                {isSubmitting ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Saving...</>
+                ) : (
+                  <><Save className="w-5 h-5" /> {isEditing ? "Update Profile" : "Create Profile"}</>
+                )}
               </button>
-              {isEditing ? (
+              {isEditing && (
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-5 py-2.5 rounded-lg bg-white/10 hover:bg-white/20 font-medium"
+                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all font-medium text-white"
                 >
-                  Cancel Edit
+                  <X className="w-5 h-5" /> Cancel Edit
                 </button>
-              ) : null}
+              )}
             </div>
           </form>
-        </section>
+        </motion.section>
 
-        <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-          <h2 className="text-xl font-semibold mb-4">Team Members</h2>
-          {isLoading ? <p className="text-gray-300">Loading team members...</p> : null}
+        <motion.section variants={itemVariants} className="bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] rounded-3xl p-6 md:p-8 shadow-2xl">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <Users className="w-6 h-6 text-indigo-400" />
+              Team Roster
+            </h2>
+            <span className="bg-white/10 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider">
+               {members.length} Members
+            </span>
+          </div>
+
+          {isLoading ? (
+             <div className="flex flex-col items-center justify-center py-12">
+                <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
+                <p className="text-indigo-200">Retrieving roster...</p>
+             </div>
+          ) : null}
           {!isLoading && error ? (
-            <div className="space-y-3">
-              <p className="text-rose-200">{error}</p>
+            <div className="flex flex-col items-center py-12 text-center">
+              <AlertCircle className="w-12 h-12 text-rose-400 mb-4" />
+              <p className="text-rose-200 mb-4">{error}</p>
               <button
                 type="button"
                 onClick={() => void loadMembers()}
-                className="px-4 py-2 bg-rose-500 hover:bg-rose-400 rounded-lg font-medium"
+                className="px-6 py-2.5 bg-rose-500 hover:bg-rose-400 rounded-xl font-medium shadow-lg shadow-rose-500/20"
               >
-                Retry
+                Retry Request
               </button>
             </div>
           ) : null}
           {!isLoading && !error && members.length === 0 ? (
-            <p className="text-gray-300">No team members found.</p>
+            <div className="text-center py-12">
+               <Users className="w-12 h-12 mx-auto text-gray-500 mb-4 opacity-50" />
+               <p className="text-gray-400">No team members identified yet. Add one above.</p>
+            </div>
           ) : null}
 
           {!isLoading && !error && members.length > 0 ? (
-            <div className="space-y-3">
-              {members.map((member) => (
-                <article
-                  key={member.id}
-                  className="rounded-xl border border-white/15 bg-white/5 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
-                >
-                  <div>
-                    <h3 className="text-lg font-medium">{member.fullName}</h3>
-                    <p className="text-sm text-gray-300">{member.roleTitle}</p>
-                    <p className="text-sm text-gray-400">
-                      Order {member.sortOrder} • {member.isVisible ? "Visible" : "Hidden"}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <AnimatePresence>
+                {members.map((member) => (
+                  <motion.article
+                    layout
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    key={member.id}
+                    className={`group bg-white/[0.02] border border-white/[0.08] hover:border-indigo-500/30 rounded-2xl p-5 transition-all duration-300 relative overflow-hidden flex flex-col justify-between ${editingMemberId === member.id ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-[#050020]' : ''}`}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 via-transparent to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    
+                    <div className="flex gap-4 mb-4">
+                       <div className="w-16 h-16 rounded-xl overflow-hidden bg-black/40 border border-white/10 shrink-0">
+                          {member.imageUrl ? (
+                             <img src={member.imageUrl} alt={member.fullName} className="w-full h-full object-cover" />
+                          ) : (
+                             <div className="w-full h-full flex items-center justify-center text-gray-600">
+                                <Users className="w-8 h-8" />
+                             </div>
+                          )}
+                       </div>
+                       <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                             <h3 className="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors truncate">
+                                {member.fullName}
+                             </h3>
+                             {member.isVisible ? (
+                                <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                             ) : (
+                                <EyeOff className="w-3.5 h-3.5 text-amber-400" />
+                             )}
+                          </div>
+                          <p className="text-xs uppercase tracking-wider font-bold text-gray-500 mb-2 truncate">
+                             {member.roleTitle}
+                          </p>
+                          <div className="flex gap-2">
+                             {member.linkedinUrl && (
+                                <a href={member.linkedinUrl} target="_blank" rel="noopener noreferrer" className="p-1 rounded bg-white/5 hover:bg-blue-500/20 text-gray-500 hover:text-blue-400 transition-colors">
+                                   <FaLinkedin className="w-4 h-4" />
+                                </a>
+                             )}
+                             {member.twitterUrl && (
+                                <a href={member.twitterUrl} target="_blank" rel="noopener noreferrer" className="p-1 rounded bg-white/5 hover:bg-blue-400/20 text-gray-500 hover:text-blue-400 transition-colors">
+                                   <FaTwitter className="w-4 h-4" />
+                                </a>
+                             )}
+                          </div>
+                       </div>
+                    </div>
+
+                    <p className="text-sm text-gray-400 line-clamp-3 mb-4 flex-1">
+                       {member.bio}
                     </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleEdit(member)}
-                      className="px-3 py-2 rounded-lg bg-cyan-600/80 hover:bg-cyan-500 text-sm font-medium"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void handleDelete(member)}
-                      className="px-3 py-2 rounded-lg bg-rose-600/80 hover:bg-rose-500 text-sm font-medium"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </article>
-              ))}
+
+                    <div className="flex gap-3 z-10 shrink-0 pt-4 border-t border-white/5">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(member)}
+                        className="flex-1 flex items-center justify-center gap-2 p-2.5 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white transition-all group/btn font-medium text-sm"
+                      >
+                        <Edit3 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleDelete(member)}
+                        className="flex-1 flex items-center justify-center gap-2 p-2.5 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white transition-all group/btn font-medium text-sm"
+                      >
+                        <Trash2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                        Delete
+                      </button>
+                    </div>
+                  </motion.article>
+                ))}
+              </AnimatePresence>
             </div>
           ) : null}
-        </section>
-      </div>
+        </motion.section>
+      </motion.div>
     </div>
   );
 }
