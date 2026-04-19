@@ -84,7 +84,7 @@ const Signup = (): ReactElement => {
             className="w-full h-screen object-cover"
           />
         </div>
-        <div className="S_form w-full text-[#CFB3B3] order-2 lg:order-2 ">
+        <div className="S_form w-full mx-auto lg:max-w-4xl text-[#CFB3B3] order-2 lg:order-2 ">
           <h1 className="text-2xl text-center font-bold mb-6">
             Create Your Account
           </h1>
