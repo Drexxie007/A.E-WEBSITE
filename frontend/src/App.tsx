@@ -1,8 +1,7 @@
-import DesignCourses from "./pages/DesignCourses"
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
-import Navbar from "./components/ui/learning-cohorts/Navbar";
+import LearningCohort from "./pages/LearningCohort"
+import Guru from "./pages/Guru"
+import HomePage from "./pages/HomePage"
+import Coursedetails from "./pages/CourseDetails"
 
 // Public Pages
 import HomePage from "./pages/HomePage";
@@ -36,6 +35,13 @@ import ViewUsers from "./pages/admin/ViewUsers";
 
 function App() {
   return (
+    <>
+      <LearningCohort/>
+      <Guru/>
+      <HomePage/>
+      <Coursedetails />
+    </>
+  )
     <AuthProvider>
       <BrowserRouter>
         <Navbar />
