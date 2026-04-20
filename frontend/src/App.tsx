@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Navbar from "./components/ui/learning-cohorts/Navbar";
+import Footer from "./components/ui/Footer";
 
 // Public Pages
 import HomePage from "./pages/HomePage";
@@ -33,12 +34,13 @@ import ManageTestimonials from "./pages/admin/ManageTestimonials";
 import ManageTeam from "./pages/admin/ManageTeam";
 import ViewUsers from "./pages/admin/ViewUsers";
 
+
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Navbar />
-
+       
         <Routes>
           {/* PUBLIC ROUTES */}
           <Route path="/" element={<HomePage />} />
@@ -145,6 +147,8 @@ function App() {
             }
           />
         </Routes>
+         <Footer />
+
       </BrowserRouter>
     </AuthProvider>
   );
